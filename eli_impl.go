@@ -159,7 +159,6 @@ func (config *Config) Unlock(unlockToken string) (int, error) {
 		return 0, fmt.Errorf("could not create request for Refresh: %s", err)
 	}
 	req.Header.Set("content-type", "application/json")
-	req.Header.Set("authorization", "Bearer "+unlockToken)
 
 	client := http.Client{
 		Timeout: 30 * time.Second,
@@ -189,7 +188,6 @@ func (config *Config) Confirm(confirmationToken string) (int, error) {
 		return 0, fmt.Errorf("could not create request for Refresh: %s", err)
 	}
 	req.Header.Set("content-type", "application/json")
-	req.Header.Set("authorization", "Bearer "+confirmationToken)
 
 	client := http.Client{
 		Timeout: 30 * time.Second,
@@ -210,7 +208,33 @@ func (config *Config) Confirm(confirmationToken string) (int, error) {
 }
 
 func (config *Config) RequestPasswordRecovery(appToken, email string) (int, error) {
-	return 0, errors.New("some error")
+	requestURL := config.BaseURL + "/rest" + addAdminToUrlPath(config.ServiceType) + "/accounts/password/recover"
+	jsonBody := []byte(`{"email": "` + email + `"}`)
+	bodyReader := bytes.NewReader(jsonBody)
+
+	req, err := http.NewRequest(http.MethodPut, requestURL, bodyReader)
+	if err != nil {
+		return 0, fmt.Errorf("could not create request for Refresh: %s", err)
+	}
+	req.Header.Set("content-type", "application/json")
+	req.Header.Set("app-token", appToken)
+
+	client := http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	res, err := client.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("error requesting for Unlock: %s", err)
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return 0, fmt.Errorf("body reader error for Unlock: %s", err)
+	}
+
+	return parseRequestPasswordRecoveryResponse(res.StatusCode, body)
 }
 
 func (config *Config) RecoverPassword(token, password, passwordConfirmation string) (int, error) {
@@ -300,6 +324,15 @@ func parseRefreshResponse(statusCode int, body []byte) (string, int, error) {
 
 func parseDefaultAccountResponse(statusCode int, body []byte) (int, error) {
 	if statusCode == http.StatusAccepted {
+		return statusCode, nil
+	} else {
+		_, err := parseErrorResponse(body)
+		return statusCode, err
+	}
+}
+
+func parseRequestPasswordRecoveryResponse(statusCode int, body []byte) (int, error) {
+	if statusCode == http.StatusOK {
 		return statusCode, nil
 	} else {
 		_, err := parseErrorResponse(body)
