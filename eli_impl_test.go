@@ -322,7 +322,7 @@ func TestRefreshFails(t *testing.T) {
 func TestUnlockSuccess(t *testing.T) {
 	jsonResponse := `{
 		"data": {
-			"token": "a-new-and-valid-token"
+			"message": "account was successfully unlocked"
 		}
  	}`
 
@@ -380,7 +380,7 @@ func TestUnlockFails(t *testing.T) {
 func TestConfirmSuccess(t *testing.T) {
 	jsonResponse := `{
 		"data": {
-			"token": "a-new-and-valid-token"
+			"message": "account was successfully confirmed"
 		}
  	}`
 
@@ -432,5 +432,63 @@ func TestConfirmFails(t *testing.T) {
 		t.Log("[PASSED] with an invalid token Confirm returns status code 404")
 	} else {
 		t.Errorf("[FAILED] with an invalid token UnConfirmock did not return status code 404, but %d", statusCode)
+	}
+}
+
+func TestRequestPasswordRecoverySuccess(t *testing.T) {
+	jsonResponse := `{
+		"data": {
+			"message": "password recovery was successfully requested"
+		}
+ 	}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte(jsonResponse))
+	}))
+	defer server.Close()
+
+	user := goeli.NewServiceConfig("", server.URL, "some-app-token")
+
+	statusCode, err := user.RequestPasswordRecovery("a-valid-token", "test@test.com")
+	if err == nil {
+		t.Log("[PASSED] with a valid token RequestPasswordRecovery returns no error")
+	} else {
+		t.Error("[FAILED] with a valid token RequestPasswordRecovery returned an error")
+	}
+
+	if statusCode == 200 {
+		t.Log("[PASSED] with a valid token RequestPasswordRecovery returns status code 200")
+	} else {
+		t.Errorf("[FAILED] with a valid token RequestPasswordRecovery did not return status code 200, but %d", statusCode)
+	}
+}
+
+func TestRequestPasswordRecoveryFails(t *testing.T) {
+	jsonResponse := `{
+		"errors": {
+			"detail": "token is invalid"
+		}
+ 	}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(404)
+		_, _ = w.Write([]byte(jsonResponse))
+	}))
+	defer server.Close()
+
+	user := goeli.NewServiceConfig("", server.URL, "some-app-token")
+
+	statusCode, err := user.RequestPasswordRecovery("an-invalid-token", "test@test.com")
+	if err != nil {
+		t.Log("[PASSED] with an invalid token RequestPasswordRecovery returns an error")
+	} else {
+		t.Error("[FAILED] with an invalid token RequestPasswordRecovery returns no error")
+	}
+
+	if statusCode == 404 {
+		t.Log("[PASSED] with an invalid token RequestPasswordRecovery returns status code 404")
+	} else {
+		t.Errorf("[FAILED] with an invalid token RequestPasswordRecovery did not return status code 404, but %d", statusCode)
 	}
 }
