@@ -156,7 +156,7 @@ func (config *Config) Unlock(unlockToken string) (int, error) {
 
 	req, err := http.NewRequest(http.MethodPut, requestURL, bodyReader)
 	if err != nil {
-		return 0, fmt.Errorf("could not create request for Refresh: %s", err)
+		return 0, fmt.Errorf("could not create request for Unlock: %s", err)
 	}
 	req.Header.Set("content-type", "application/json")
 
@@ -185,7 +185,7 @@ func (config *Config) Confirm(confirmationToken string) (int, error) {
 
 	req, err := http.NewRequest(http.MethodPut, requestURL, bodyReader)
 	if err != nil {
-		return 0, fmt.Errorf("could not create request for Refresh: %s", err)
+		return 0, fmt.Errorf("could not create request for Confirm: %s", err)
 	}
 	req.Header.Set("content-type", "application/json")
 
@@ -195,13 +195,13 @@ func (config *Config) Confirm(confirmationToken string) (int, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		return 0, fmt.Errorf("error requesting for Unlock: %s", err)
+		return 0, fmt.Errorf("error requesting for Confirm: %s", err)
 	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		return 0, fmt.Errorf("body reader error for Unlock: %s", err)
+		return 0, fmt.Errorf("body reader error for Confirm: %s", err)
 	}
 
 	return parseDefaultAccountResponse(res.StatusCode, body)
@@ -214,7 +214,7 @@ func (config *Config) RequestPasswordRecovery(appToken, email string) (int, erro
 
 	req, err := http.NewRequest(http.MethodPost, requestURL, bodyReader)
 	if err != nil {
-		return 0, fmt.Errorf("could not create request for Refresh: %s", err)
+		return 0, fmt.Errorf("could not create request for RequestPasswordRecovery: %s", err)
 	}
 	req.Header.Set("content-type", "application/json")
 	req.Header.Set("app-token", appToken)
@@ -225,13 +225,13 @@ func (config *Config) RequestPasswordRecovery(appToken, email string) (int, erro
 
 	res, err := client.Do(req)
 	if err != nil {
-		return 0, fmt.Errorf("error requesting for Unlock: %s", err)
+		return 0, fmt.Errorf("error requesting for RequestPasswordRecovery: %s", err)
 	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		return 0, fmt.Errorf("body reader error for Unlock: %s", err)
+		return 0, fmt.Errorf("body reader error for RequestPasswordRecovery: %s", err)
 	}
 
 	return parseRequestPasswordRecoveryResponse(res.StatusCode, body)
