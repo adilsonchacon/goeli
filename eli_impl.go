@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/adilsonchacon/eli/entities"
+	"github.com/adilsonchacon/goeli/entities"
 )
 
 func (config *Config) SignIn(email, password string) (string, int, error) {

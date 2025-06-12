@@ -1,6 +1,6 @@
 package eli
 
-import "github.com/adilsonchacon/eli/entities"
+import "github.com/adilsonchacon/goeli/entities"
 
 type Letmein interface {
 	SignIn(email, password string) (string, int, error)
