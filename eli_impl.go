@@ -212,7 +212,7 @@ func (config *Config) RequestPasswordRecovery(appToken, email string) (int, erro
 	jsonBody := []byte(`{"email": "` + email + `"}`)
 	bodyReader := bytes.NewReader(jsonBody)
 
-	req, err := http.NewRequest(http.MethodPut, requestURL, bodyReader)
+	req, err := http.NewRequest(http.MethodPost, requestURL, bodyReader)
 	if err != nil {
 		return 0, fmt.Errorf("could not create request for Refresh: %s", err)
 	}
