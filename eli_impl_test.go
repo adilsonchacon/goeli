@@ -1,9 +1,11 @@
-package eli
+package goeli_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/adilsonchacon/goeli"
 )
 
 func TestSignInSuccess(t *testing.T) {
@@ -19,7 +21,7 @@ func TestSignInSuccess(t *testing.T) {
 	}))
 	defer server.Close()
 
-	eli := NewServiceConfig("", server.URL, "some-app-token")
+	eli := goeli.NewServiceConfig("", server.URL, "some-app-token")
 
 	message, statusCode, err := eli.SignIn("test@test.com", "Secret.123!")
 	if err == nil {
@@ -54,7 +56,7 @@ func TestSignInFails(t *testing.T) {
 	}))
 	defer server.Close()
 
-	user := NewServiceConfig("", server.URL, "some-app-token")
+	user := goeli.NewServiceConfig("", server.URL, "some-app-token")
 
 	message, statusCode, err := user.SignIn("test@test.com", "wrong-password")
 	if err != nil {
@@ -85,7 +87,7 @@ func TestSignedInSuccess(t *testing.T) {
 	}))
 	defer server.Close()
 
-	user := NewServiceConfig("", server.URL, "some-app-token")
+	user := goeli.NewServiceConfig("", server.URL, "some-app-token")
 
 	signedIn, _ := user.SignedIn("a-valid-token")
 	if signedIn {
@@ -104,7 +106,7 @@ func TestSignedInFails(t *testing.T) {
 	}))
 	defer server.Close()
 
-	user := NewServiceConfig("", server.URL, "some-app-token")
+	user := goeli.NewServiceConfig("", server.URL, "some-app-token")
 
 	signedIn, _ := user.SignedIn("an-invalid-token")
 	if !signedIn {
@@ -132,7 +134,7 @@ func TestCurrentUserSuccess(t *testing.T) {
 	}))
 	defer server.Close()
 
-	user := NewServiceConfig("", server.URL, "some-app-token")
+	user := goeli.NewServiceConfig("", server.URL, "some-app-token")
 
 	currentUser, statusCode, err := user.CurrentUser("a-valid-token")
 	if err == nil {
@@ -167,7 +169,7 @@ func TestCurrentUserFails(t *testing.T) {
 	}))
 	defer server.Close()
 
-	user := NewServiceConfig("", server.URL, "some-app-token")
+	user := goeli.NewServiceConfig("", server.URL, "some-app-token")
 
 	currentUser, statusCode, err := user.CurrentUser("an-invalid-token")
 	if err != nil {
@@ -202,7 +204,7 @@ func TestSignOutSuccess(t *testing.T) {
 	}))
 	defer server.Close()
 
-	user := NewServiceConfig("", server.URL, "some-app-token")
+	user := goeli.NewServiceConfig("", server.URL, "some-app-token")
 
 	statusCode, err := user.SignOut("a-valid-token")
 	if err == nil {
@@ -231,7 +233,7 @@ func TestSignOutFails(t *testing.T) {
 	}))
 	defer server.Close()
 
-	user := NewServiceConfig("", server.URL, "some-app-token")
+	user := goeli.NewServiceConfig("", server.URL, "some-app-token")
 
 	statusCode, err := user.SignOut("an-invalid-token")
 	if err != nil {
@@ -260,7 +262,7 @@ func TestRefreshSuccess(t *testing.T) {
 	}))
 	defer server.Close()
 
-	user := NewServiceConfig("", server.URL, "some-app-token")
+	user := goeli.NewServiceConfig("", server.URL, "some-app-token")
 
 	message, statusCode, err := user.Refresh("a-valid-token")
 	if err == nil {
@@ -295,7 +297,7 @@ func TestRefreshFails(t *testing.T) {
 	}))
 	defer server.Close()
 
-	user := NewServiceConfig("", server.URL, "some-app-token")
+	user := goeli.NewServiceConfig("", server.URL, "some-app-token")
 
 	message, statusCode, err := user.Refresh("an-invalid-token")
 	if err != nil {

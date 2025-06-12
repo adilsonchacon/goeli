@@ -1,4 +1,4 @@
-package eli
+package goeli
 
 import "github.com/adilsonchacon/goeli/entities"
 

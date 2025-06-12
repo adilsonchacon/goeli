@@ -1,4 +1,4 @@
-package eli
+package goeli
 
 import "strings"
 
