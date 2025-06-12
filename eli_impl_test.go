@@ -318,3 +318,61 @@ func TestRefreshFails(t *testing.T) {
 		t.Errorf("[FAILED] with an invalid token Refresh did not returned message: %s", message)
 	}
 }
+
+func TestUnlockSuccess(t *testing.T) {
+	jsonResponse := `{
+		"data": {
+			"token": "a-new-and-valid-token"
+		}
+ 	}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(202)
+		_, _ = w.Write([]byte(jsonResponse))
+	}))
+	defer server.Close()
+
+	user := goeli.NewServiceConfig("", server.URL, "some-app-token")
+
+	statusCode, err := user.Unlock("a-valid-token")
+	if err == nil {
+		t.Log("[PASSED] with a valid token Unlock returns no error")
+	} else {
+		t.Error("[FAILED] with a valid token Unlock returned an error")
+	}
+
+	if statusCode == 202 {
+		t.Log("[PASSED] with a valid token Unlock returns status code 202")
+	} else {
+		t.Errorf("[FAILED] with a valid token Unlock did not return status code 202, but %d", statusCode)
+	}
+}
+
+func TestUnlockFails(t *testing.T) {
+	jsonResponse := `{
+		"errors": {
+			"detail": "invalid credentials"
+		}
+ 	}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(404)
+		_, _ = w.Write([]byte(jsonResponse))
+	}))
+	defer server.Close()
+
+	user := goeli.NewServiceConfig("", server.URL, "some-app-token")
+
+	statusCode, err := user.Unlock("an-invalid-token")
+	if err != nil {
+		t.Log("[PASSED] with an invalid token Unlock returns an error")
+	} else {
+		t.Error("[FAILED] with an invalid token Unlock returns no error")
+	}
+
+	if statusCode == 404 {
+		t.Log("[PASSED] with an invalid token Unlock returns status code 404")
+	} else {
+		t.Errorf("[FAILED] with an invalid token Unlock did not return status code 404, but %d", statusCode)
+	}
+}
