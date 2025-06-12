@@ -376,3 +376,61 @@ func TestUnlockFails(t *testing.T) {
 		t.Errorf("[FAILED] with an invalid token Unlock did not return status code 404, but %d", statusCode)
 	}
 }
+
+func TestConfirmSuccess(t *testing.T) {
+	jsonResponse := `{
+		"data": {
+			"token": "a-new-and-valid-token"
+		}
+ 	}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(202)
+		_, _ = w.Write([]byte(jsonResponse))
+	}))
+	defer server.Close()
+
+	user := goeli.NewServiceConfig("", server.URL, "some-app-token")
+
+	statusCode, err := user.Confirm("a-valid-token")
+	if err == nil {
+		t.Log("[PASSED] with a valid token Confirm returns no error")
+	} else {
+		t.Error("[FAILED] with a valid token Confirm returned an error")
+	}
+
+	if statusCode == 202 {
+		t.Log("[PASSED] with a valid token Confirm returns status code 202")
+	} else {
+		t.Errorf("[FAILED] with a valid token Confirm did not return status code 202, but %d", statusCode)
+	}
+}
+
+func TestConfirmFails(t *testing.T) {
+	jsonResponse := `{
+		"errors": {
+			"detail": "invalid credentials"
+		}
+ 	}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(404)
+		_, _ = w.Write([]byte(jsonResponse))
+	}))
+	defer server.Close()
+
+	user := goeli.NewServiceConfig("", server.URL, "some-app-token")
+
+	statusCode, err := user.Confirm("an-invalid-token")
+	if err != nil {
+		t.Log("[PASSED] with an invalid token Confirm returns an error")
+	} else {
+		t.Error("[FAILED] with an invalid token Confirm returns no error")
+	}
+
+	if statusCode == 404 {
+		t.Log("[PASSED] with an invalid token Confirm returns status code 404")
+	} else {
+		t.Errorf("[FAILED] with an invalid token UnConfirmock did not return status code 404, but %d", statusCode)
+	}
+}

@@ -150,7 +150,7 @@ func (config *Config) Refresh(sessionToken string) (string, int, error) {
 }
 
 func (config *Config) Unlock(unlockToken string) (int, error) {
-	requestURL := config.BaseURL + "/rest" + addAdminToUrlPath(config.ServiceType) + "/sessions"
+	requestURL := config.BaseURL + "/rest" + addAdminToUrlPath(config.ServiceType) + "/accounts/unlock"
 	jsonBody := []byte(`{"token": "` + unlockToken + `"}`)
 	bodyReader := bytes.NewReader(jsonBody)
 
@@ -176,11 +176,37 @@ func (config *Config) Unlock(unlockToken string) (int, error) {
 		return 0, fmt.Errorf("body reader error for Unlock: %s", err)
 	}
 
-	return parseUnlockResponse(res.StatusCode, body)
+	return parseDefaultAccountResponse(res.StatusCode, body)
 }
 
 func (config *Config) Confirm(confirmationToken string) (int, error) {
-	return 0, errors.New("some error")
+	requestURL := config.BaseURL + "/rest" + addAdminToUrlPath(config.ServiceType) + "/accounts/confirm"
+	jsonBody := []byte(`{"token": "` + confirmationToken + `"}`)
+	bodyReader := bytes.NewReader(jsonBody)
+
+	req, err := http.NewRequest(http.MethodPut, requestURL, bodyReader)
+	if err != nil {
+		return 0, fmt.Errorf("could not create request for Refresh: %s", err)
+	}
+	req.Header.Set("content-type", "application/json")
+	req.Header.Set("authorization", "Bearer "+confirmationToken)
+
+	client := http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	res, err := client.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("error requesting for Unlock: %s", err)
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return 0, fmt.Errorf("body reader error for Unlock: %s", err)
+	}
+
+	return parseDefaultAccountResponse(res.StatusCode, body)
 }
 
 func (config *Config) RequestPasswordRecovery(appToken, email string) (int, error) {
@@ -230,6 +256,7 @@ func parseErrorResponse(body []byte) (string, error) {
 
 	return "", errors.New(letmeinError.Errors.Detail)
 }
+
 func parseUserResponse(body []byte) (*entities.User, int, error) {
 	var dataUser *entities.DataUser
 	err := json.Unmarshal(body, &dataUser)
@@ -271,13 +298,11 @@ func parseRefreshResponse(statusCode int, body []byte) (string, int, error) {
 	return message, statusCode, err
 }
 
-func parseUnlockResponse(statusCode int, body []byte) (int, error) {
-	var err error
-
+func parseDefaultAccountResponse(statusCode int, body []byte) (int, error) {
 	if statusCode == http.StatusAccepted {
 		return statusCode, nil
 	} else {
-		_, err = parseErrorResponse(body)
+		_, err := parseErrorResponse(body)
 		return statusCode, err
 	}
 }
