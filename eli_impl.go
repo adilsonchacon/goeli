@@ -238,7 +238,32 @@ func (config *Config) RequestPasswordRecovery(appToken, email string) (int, erro
 }
 
 func (config *Config) RecoverPassword(token, password, passwordConfirmation string) (int, error) {
-	return 0, errors.New("some error")
+	requestURL := config.BaseURL + "/rest" + addAdminToUrlPath(config.ServiceType) + "/accounts/password/recover"
+	jsonBody := []byte(`{"token": "` + token + `", "password": "` + password + `", "password_confirmation": "` + passwordConfirmation + `"}`)
+	bodyReader := bytes.NewReader(jsonBody)
+
+	req, err := http.NewRequest(http.MethodPut, requestURL, bodyReader)
+	if err != nil {
+		return 0, fmt.Errorf("could not create request for RecoverPassword: %s", err)
+	}
+	req.Header.Set("content-type", "application/json")
+
+	client := http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	res, err := client.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("error requesting for RecoverPassword: %s", err)
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return 0, fmt.Errorf("body reader error for RecoverPassword: %s", err)
+	}
+
+	return parseRequestPasswordRecoveryResponse(res.StatusCode, body)
 }
 
 func addAdminToUrlPath(serviceName string) string {

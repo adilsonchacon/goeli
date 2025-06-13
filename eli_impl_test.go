@@ -492,3 +492,137 @@ func TestRequestPasswordRecoveryFails(t *testing.T) {
 		t.Errorf("[FAILED] with an invalid token RequestPasswordRecovery did not return status code 404, but %d", statusCode)
 	}
 }
+
+func TestRecoverPasswordSuccess(t *testing.T) {
+	jsonResponse := `{
+		"data": {
+			"message": "password was successfully recovered"
+		}
+ 	}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte(jsonResponse))
+	}))
+	defer server.Close()
+
+	user := goeli.NewServiceConfig("", server.URL, "some-app-token")
+
+	statusCode, err := user.RecoverPassword("a-valid-token", "n3W-pAssword", "n3W-pAssword")
+	if err == nil {
+		t.Log("[PASSED] with a valid token and passwords RecoverPassword returns no error")
+	} else {
+		t.Error("[FAILED] with a valid token and passwords RecoverPassword returned an error")
+	}
+
+	if statusCode == 200 {
+		t.Log("[PASSED] with a valid token and passwords RecoverPassword returns status code 200")
+	} else {
+		t.Errorf("[FAILED] with a valid token and passwords RecoverPassword did not return status code 200, but %d", statusCode)
+	}
+}
+
+func TestRecoverPasswordyFailsWithInvalidToken(t *testing.T) {
+	jsonResponse := `{
+		"errors": {
+			"detail": "token is invalid"
+		}
+ 	}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(400)
+		_, _ = w.Write([]byte(jsonResponse))
+	}))
+	defer server.Close()
+
+	user := goeli.NewServiceConfig("", server.URL, "some-app-token")
+
+	statusCode, err := user.RecoverPassword("an-invalid-token", "n3W-pAssword", "n3W-pAssword")
+	if err != nil {
+		t.Log("[PASSED] with an invalid token RecoverPassword returns an error")
+	} else {
+		t.Error("[FAILED] with an invalid token RecoverPassword returns no error")
+	}
+
+	if err.Error() == "token is invalid" {
+		t.Log("[PASSED] with an invalid token RecoverPassword returns error \"token is invalid\"")
+	} else {
+		t.Errorf("[FAILED] with an invalid token RecoverPassword did not return no error \"token is invalid\", but \"%s\"", err)
+	}
+
+	if statusCode == 400 {
+		t.Log("[PASSED] with an invalid token RecoverPassword returns status code 404")
+	} else {
+		t.Errorf("[FAILED] with an invalid token RecoverPassword did not return status code 404, but %d", statusCode)
+	}
+}
+
+func TestRecoverPasswordyFailsWithInvalidPasswords(t *testing.T) {
+	jsonResponse := `{
+		"errors": {
+			"detail": "password has an invalid format"
+		}
+ 	}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(400)
+		_, _ = w.Write([]byte(jsonResponse))
+	}))
+	defer server.Close()
+
+	user := goeli.NewServiceConfig("", server.URL, "some-app-token")
+
+	statusCode, err := user.RecoverPassword("a-valid-token", "1234567", "1234567")
+	if err != nil {
+		t.Log("[PASSED] with invalid passwords RecoverPassword returns an error")
+	} else {
+		t.Error("[FAILED] with invalid passwords RecoverPassword returns no error")
+	}
+
+	if err.Error() == "password has an invalid format" {
+		t.Log("[PASSED] with invalid passwords RecoverPassword returns error \"password has an invalid format\"")
+	} else {
+		t.Errorf("[FAILED] with invalid passwords RecoverPassword did not return error \"password has an invalid format\", but \"%s\"", err)
+	}
+
+	if statusCode == 400 {
+		t.Log("[PASSED] with invalid passwords RecoverPassword returns status code 400")
+	} else {
+		t.Errorf("[FAILED] with invalid passwords RecoverPassword did not return status code 400, but %d", statusCode)
+	}
+}
+
+func TestRecoverPasswordyFailsWithInvalidPasswordConfirmation(t *testing.T) {
+	jsonResponse := `{
+		"errors": {
+			"detail": "password and confirmation password are different"
+		}
+ 	}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(400)
+		_, _ = w.Write([]byte(jsonResponse))
+	}))
+	defer server.Close()
+
+	user := goeli.NewServiceConfig("", server.URL, "some-app-token")
+
+	statusCode, err := user.RecoverPassword("a-valid-token", "n3W-pAssword", "different-n3W-pAssword")
+	if err != nil {
+		t.Log("[PASSED] with invalid password confirmation RecoverPassword returns an error")
+	} else {
+		t.Error("[FAILED] with invalid password confirmation RecoverPassword returns no error")
+	}
+
+	if err.Error() == "password and confirmation password are different" {
+		t.Log("[PASSED] with invalid password confirmation RecoverPassword returns error \"password and confirmation password are different\"")
+	} else {
+		t.Errorf("[FAILED] with invalid password confirmation RecoverPassword did not return error \"password and confirmation password are different\", but \"%s\"", err)
+	}
+
+	if statusCode == 400 {
+		t.Log("[PASSED] with invalid password confirmation RecoverPassword returns status code 400")
+	} else {
+		t.Errorf("[FAILED] with invalid password confirmation RecoverPassword did not return status code 400, but %d", statusCode)
+	}
+}
