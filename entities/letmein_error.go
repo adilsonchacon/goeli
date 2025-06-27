@@ -7,3 +7,8 @@ type LetmeinError struct {
 type Detail struct {
 	Detail string `json:"detail"`
 }
+
+type LetmeinValidationError struct {
+	Field   string
+	Message []string
+}
