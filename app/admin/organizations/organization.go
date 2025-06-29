@@ -1,8 +1,10 @@
 package organizations
 
-import "github.com/adilsonchacon/goeli/entities"
+import (
+	"github.com/adilsonchacon/goeli/entities"
+)
 
-type DataOrganization struct {
+type OrganizationData struct {
 	Organization Organization `json:"data"`
 }
 

@@ -6,7 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/adilsonchacon/goeli/app/organizations"
+	"github.com/adilsonchacon/goeli/app/admin/organizations"
+	"github.com/adilsonchacon/goeli/config/admin"
 	"github.com/adilsonchacon/goeli/lib/letmeinerr"
 )
 
@@ -31,8 +32,9 @@ func TestCreateSuccess(t *testing.T) {
 		Description: "My Organization Description",
 	}
 
-	letmeinOrg := organizations.NewLetmein(server.URL, sessionToken)
-	organization, err := letmeinOrg.Create(newOrganization)
+	adminConfig := admin.NewConfig(server.URL, sessionToken)
+	organizationRepo := organizations.NewRepo(adminConfig)
+	organization, err := organizationRepo.Create(newOrganization)
 	if err == nil {
 		t.Log("With valid token should create Organization")
 	} else {
@@ -65,8 +67,9 @@ func TestCreateInputFails(t *testing.T) {
 		Description: "My Organization Description",
 	}
 
-	letmeinOrg := organizations.NewLetmein(server.URL, sessionToken)
-	_, err := letmeinOrg.Create(newOrganization)
+	adminConfig := admin.NewConfig(server.URL, sessionToken)
+	organizationRepo := organizations.NewRepo(adminConfig)
+	_, err := organizationRepo.Create(newOrganization)
 
 	if err != nil {
 		t.Logf("With blank name should return error")
@@ -106,8 +109,9 @@ func TestCreateTokenFails(t *testing.T) {
 		Description: "My Organization Description",
 	}
 
-	letmeinOrg := organizations.NewLetmein(server.URL, sessionToken)
-	_, err := letmeinOrg.Create(newOrganization)
+	adminConfig := admin.NewConfig(server.URL, sessionToken)
+	organizationRepo := organizations.NewRepo(adminConfig)
+	_, err := organizationRepo.Create(newOrganization)
 	if err != nil {
 		t.Log("With invalid token should return error")
 	} else {
@@ -143,8 +147,9 @@ func TestFindSuccess(t *testing.T) {
 		w.Write([]byte(jsonResponse))
 	}))
 
-	letmeinOrg := organizations.NewLetmein(server.URL, sessionToken)
-	organization, err := letmeinOrg.Find("123456789")
+	adminConfig := admin.NewConfig(server.URL, sessionToken)
+	organizationRepo := organizations.NewRepo(adminConfig)
+	organization, err := organizationRepo.Find("123456789")
 	if err == nil {
 		t.Log("With existent ID should return Organization")
 	} else {
@@ -172,8 +177,9 @@ func TestFindWithNotExistentIdFails(t *testing.T) {
 		w.Write([]byte(jsonResponse))
 	}))
 
-	letmeinOrg := organizations.NewLetmein(server.URL, sessionToken)
-	_, err := letmeinOrg.Find("987654321")
+	adminConfig := admin.NewConfig(server.URL, sessionToken)
+	organizationRepo := organizations.NewRepo(adminConfig)
+	_, err := organizationRepo.Find("987654321")
 	if err != nil {
 		t.Log("With invalid ID should return error")
 	} else {
@@ -207,8 +213,9 @@ func TestFindWithInvalidTokenFails(t *testing.T) {
 		w.Write([]byte(jsonResponse))
 	}))
 
-	letmeinOrg := organizations.NewLetmein(server.URL, sessionToken)
-	_, err := letmeinOrg.Find("987654321")
+	adminConfig := admin.NewConfig(server.URL, sessionToken)
+	organizationRepo := organizations.NewRepo(adminConfig)
+	_, err := organizationRepo.Find("987654321")
 	if err != nil {
 		t.Log("With invalid token should return error")
 	} else {
@@ -250,8 +257,9 @@ func TestUpdateSuccess(t *testing.T) {
 		Description: "UpdatedUpdated Organization Description",
 	}
 
-	letmeinOrg := organizations.NewLetmein(server.URL, sessionToken)
-	_, err := letmeinOrg.Update(updateOrganization)
+	adminConfig := admin.NewConfig(server.URL, sessionToken)
+	organizationRepo := organizations.NewRepo(adminConfig)
+	_, err := organizationRepo.Update(updateOrganization)
 	if err == nil {
 		t.Log("With valid token should update Organization")
 	} else {
@@ -278,9 +286,9 @@ func TestUpdateInputFails(t *testing.T) {
 		Description: "UpdatedUpdated Organization Description",
 	}
 
-	letmeinOrg := organizations.NewLetmein(server.URL, sessionToken)
-	_, err := letmeinOrg.Update(updateOrganization)
-
+	adminConfig := admin.NewConfig(server.URL, sessionToken)
+	organizationRepo := organizations.NewRepo(adminConfig)
+	_, err := organizationRepo.Update(updateOrganization)
 	if err != nil {
 		t.Logf("With blank name should return error")
 	} else {
@@ -319,8 +327,9 @@ func TestUpdateTokenFails(t *testing.T) {
 		Description: "UpdatedUpdated Organization Description",
 	}
 
-	letmeinOrg := organizations.NewLetmein(server.URL, sessionToken)
-	_, err := letmeinOrg.Update(updateOrganization)
+	adminConfig := admin.NewConfig(server.URL, sessionToken)
+	organizationRepo := organizations.NewRepo(adminConfig)
+	_, err := organizationRepo.Update(updateOrganization)
 	if err != nil {
 		t.Log("With invalid token should return error")
 	} else {
@@ -331,6 +340,98 @@ func TestUpdateTokenFails(t *testing.T) {
 		StatusCode: http.StatusForbidden,
 		Body:       []byte(jsonResponse),
 		MainError:  letmeinerr.ErrForbidden,
+	}
+
+	if errors.As(err, &expectedError) {
+		t.Logf("With invalid token returns ForbiddenError")
+	} else {
+		t.Errorf("With invalid token does not return ForbiddenError, got %s", err)
+	}
+}
+
+func TestDeleteSuccess(t *testing.T) {
+	jsonResponse := ``
+
+	sessionToken := "a-valid-token"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+		w.Write([]byte(jsonResponse))
+	}))
+
+	adminConfig := admin.NewConfig(server.URL, sessionToken)
+	organizationRepo := organizations.NewRepo(adminConfig)
+	err := organizationRepo.Delete("123456789")
+	if err == nil {
+		t.Log("With valid token should delete Organization")
+	} else {
+		t.Errorf("Delete Organization expected no errors, got %s", err)
+	}
+}
+
+func TestDeleteInputFails(t *testing.T) {
+	jsonResponse := `{
+		"errors": {
+			"details": "Not Found"
+		}
+	}`
+
+	sessionToken := "a-valid-token"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(jsonResponse))
+	}))
+
+	adminConfig := admin.NewConfig(server.URL, sessionToken)
+	organizationRepo := organizations.NewRepo(adminConfig)
+	err := organizationRepo.Delete("123456789")
+	if err != nil {
+		t.Logf("With not existent ID should return error")
+	} else {
+		t.Error("With not existent ID should return errors, got none")
+	}
+
+	expectedError := &letmeinerr.LetmeinError{
+		StatusCode: http.StatusNotFound,
+		Body:       []byte(jsonResponse),
+		MainError:  letmeinerr.ErrNotFound,
+	}
+
+	if errors.As(err, &expectedError) {
+		t.Logf("With not existent ID returns ErrNotFound")
+	} else {
+		t.Errorf("With not existent ID does not return ErrNotFound, got %s", err)
+	}
+}
+
+func TestDeleteTokenFails(t *testing.T) {
+	jsonResponse := `{
+		"errors": {
+			"detail": "Invalid token"
+		}
+	}`
+
+	sessionToken := "an-invalid-token"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte(jsonResponse))
+	}))
+
+	adminConfig := admin.NewConfig(server.URL, sessionToken)
+	organizationRepo := organizations.NewRepo(adminConfig)
+	err := organizationRepo.Delete("123456789")
+	if err != nil {
+		t.Log("With invalid token should return error")
+	} else {
+		t.Error("With invalid token should return error")
+	}
+
+	expectedError := &letmeinerr.LetmeinError{
+		StatusCode: http.StatusNotFound,
+		Body:       []byte(jsonResponse),
+		MainError:  letmeinerr.ErrNotFound,
 	}
 
 	if errors.As(err, &expectedError) {
