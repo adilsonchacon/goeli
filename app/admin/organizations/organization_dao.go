@@ -6,7 +6,4 @@ type OrganizationDao interface {
 	Create(newOrganization Organization) (Organization, error)
 	Update(organization Organization) error
 	Delete(id string) error
-	ListAdminUsers(id string, page, perPage int) (OrganizationAdminUsers, error)
-	AddAdminUsers(user User) (*OrganizationAdminUser, error)
-	RemoveAdminUsers(id string, adminUserID string) error
 }
