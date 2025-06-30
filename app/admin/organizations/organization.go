@@ -1,8 +1,6 @@
 package organizations
 
-import (
-	"github.com/adilsonchacon/goeli/entities"
-)
+import "github.com/adilsonchacon/goeli/entities"
 
 type OrganizationData struct {
 	Organization Organization `json:"data"`
@@ -15,8 +13,8 @@ type Organization struct {
 }
 
 type Organizations struct {
-	Organizations []Organization      `json:"data"`
-	Pagination    entities.Pagination `json:"pagination"`
+	Data       []Organization      `json:"data"`
+	Pagination entities.Pagination `json:"pagination"`
 }
 
 type OrganizationAdminUsers struct {

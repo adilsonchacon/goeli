@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/adilsonchacon/goeli/config/admin"
 	"github.com/adilsonchacon/goeli/lib/letmeinerr"
@@ -70,6 +71,19 @@ func (letmein *OrganizationRepo) Delete(id string) error {
 	return parseDeleteResponse(statusCode, body)
 }
 
+func (letmein *OrganizationRepo) List(page, perPage int) (*Organizations, error) {
+	url := letmein.Repo.BaseURL + "/rest/admin/organizations?page=" + strconv.Itoa(page) + "&perPage=" + strconv.Itoa(perPage)
+	req := restapi.New(url, http.MethodGet)
+	req.AddHeader("Authorization", fmt.Sprintf("Bearer %s", letmein.Repo.SessionToken))
+	statusCode, body, err := req.DoRequest()
+
+	if err != nil {
+		return nil, fmt.Errorf("error requesting delete organization: %s", err)
+	}
+
+	return parseListResponse(statusCode, body)
+}
+
 func parseCreateResponse(statusCode int, body []byte) (*Organization, error) {
 	var organization *Organization
 	var err error
@@ -104,6 +118,28 @@ func parseDeleteResponse(statusCode int, body []byte) error {
 	}
 
 	return err
+}
+
+func parseListResponse(statusCode int, body []byte) (*Organizations, error) {
+	var organizations *Organizations
+	var err error
+	if statusCode == http.StatusOK {
+		organizations, err = parseOrganizationsResponse(body)
+	} else {
+		err = letmeinerr.New(statusCode, body)
+	}
+
+	return organizations, err
+}
+
+func parseOrganizationsResponse(body []byte) (*Organizations, error) {
+	var organizations *Organizations
+	err := json.Unmarshal(body, &organizations)
+	if err != nil {
+		return nil, fmt.Errorf("json parser error on listing organization: %w", err)
+	}
+
+	return organizations, nil
 }
 
 func parseOrganizationResponse(body []byte) (*Organization, error) {

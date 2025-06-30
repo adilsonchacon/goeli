@@ -440,3 +440,89 @@ func TestDeleteTokenFails(t *testing.T) {
 		t.Errorf("With invalid token does not return ForbiddenError, got %s", err)
 	}
 }
+
+func TestListSuccess(t *testing.T) {
+	jsonResponse := `{
+		"data": [
+				{
+					"id": "123456789",
+					"name": "My Organization",
+					"description": "My Organization Description"
+				},
+				{
+					"id": "382938293",
+					"name": "My Organization 2",
+					"description": "My Organization 2 Description"
+				}
+		],
+		"pagination": {
+			"count": 40,
+			"first": 1,
+			"last": 2,
+			"next": 2,
+			"page": 1,
+			"per_page": 20,
+			"prev": null,
+			"serie": [1,2,3,4]
+		}
+	}`
+
+	sessionToken := "a-valid-token"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(jsonResponse))
+	}))
+
+	adminConfig := admin.NewConfig(server.URL, sessionToken)
+	organizationRepo := organizations.NewRepo(adminConfig)
+	organizations, err := organizationRepo.List(1, 20)
+	if err == nil {
+		t.Log("should return list of organization with pagination")
+	} else {
+		t.Errorf("List organizations expected no errors, got %s", err)
+	}
+
+	if organizations.Data[0].ID == "123456789" {
+		t.Log("First organization in list has the expected ID")
+	} else {
+		t.Errorf("First organization in list has not the expected ID 123456789, got %s", organizations.Data[0].ID)
+	}
+}
+
+func TestListWithInvalidTokenFails(t *testing.T) {
+	jsonResponse := `{
+		"errors": {
+			"detail": "Forbidden"
+		}
+	}`
+
+	sessionToken := "an-invalid-token"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte(jsonResponse))
+	}))
+
+	adminConfig := admin.NewConfig(server.URL, sessionToken)
+	organizationRepo := organizations.NewRepo(adminConfig)
+	_, err := organizationRepo.List(1, 20)
+	if err != nil {
+		t.Log("With invalid token should return error")
+	} else {
+		t.Error("With invalid token did not return error")
+	}
+
+	expectedError := &letmeinerr.LetmeinError{
+		StatusCode: http.StatusForbidden,
+		Body:       []byte(jsonResponse),
+		MainError:  letmeinerr.ErrForbidden,
+	}
+
+	if errors.As(err, &expectedError) {
+		t.Log("With invalid token returns Forbidden")
+	} else {
+		t.Errorf("With invalid token does not return Forbidden, got %s", err)
+	}
+
+}
