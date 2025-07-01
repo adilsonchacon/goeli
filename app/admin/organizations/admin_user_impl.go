@@ -23,6 +23,19 @@ func (letmein *OrganizationRepo) ListAdminUsers(orgID string, page, perPage int)
 	return parseListAdminUsersResponse(statusCode, body)
 }
 
+func (letmein *OrganizationRepo) AddAdminUser(orgID, email string) (*AdminUserData, error) {
+	url := letmein.Repo.BaseURL + "/rest/admin/organizations/" + orgID + "/admin_users"
+	req := restapi.New(url, http.MethodPost)
+	req.AddHeader("Authorization", fmt.Sprintf("Bearer %s", letmein.Repo.SessionToken))
+	statusCode, body, err := req.DoRequest()
+
+	if err != nil {
+		return nil, fmt.Errorf("error requesting list of organization's admin users: %s", err)
+	}
+
+	return parseAddAdminUserResponse(statusCode, body)
+}
+
 func parseListAdminUsersResponse(statusCode int, body []byte) (*AdminUsers, error) {
 	var adminUsers *AdminUsers
 	var err error
@@ -43,4 +56,26 @@ func parseAdminUsersResponse(body []byte) (*AdminUsers, error) {
 	}
 
 	return adminUsers, nil
+}
+
+func parseAddAdminUserResponse(statusCode int, body []byte) (*AdminUserData, error) {
+	var adminUserData *AdminUserData
+	var err error
+	if statusCode == http.StatusCreated {
+		adminUserData, err = parseAdminUserResponse(body)
+	} else {
+		err = letmeinerr.New(statusCode, body)
+	}
+
+	return adminUserData, err
+}
+
+func parseAdminUserResponse(body []byte) (*AdminUserData, error) {
+	var adminUserData *AdminUserData
+	err := json.Unmarshal(body, &adminUserData)
+	if err != nil {
+		return nil, fmt.Errorf("json parser error on add organization's admin users: %w", err)
+	}
+
+	return adminUserData, nil
 }

@@ -7,6 +7,10 @@ type AdminUsers struct {
 	Pagination entities.Pagination `json:"pagination"`
 }
 
+type AdminUserData struct {
+	Data AdminUser `json:"data"`
+}
+
 type AdminUser struct {
 	ID   string `json:"id"`
 	User User   `json:"user"`
