@@ -259,3 +259,95 @@ func TestAddAdminUserWithInvalidInputFails(t *testing.T) {
 		t.Errorf("With invalid organization ID returns Not Found, got %s", err)
 	}
 }
+
+func TestRemoveAdminUserSuccess(t *testing.T) {
+	jsonResponse := ``
+
+	sessionToken := "a-valid-token"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+		w.Write([]byte(jsonResponse))
+	}))
+
+	adminConfig := admin.NewConfig(server.URL, sessionToken)
+	organizationRepo := organizations.NewRepo(adminConfig)
+	err := organizationRepo.RemoveAdminUser("123456789", "d008ae02-29a4-4cf5-95d9-2cd90fc29b4c")
+
+	if err == nil {
+		t.Log("returns removed admin users")
+	} else {
+		t.Errorf("expected remove admin user, but got error: %s", err)
+	}
+}
+
+func TestRemoveAdminUserWithInvalidTokenFails(t *testing.T) {
+	jsonResponse := `{
+		"errors": {
+			"detail": "Forbidden"
+		}
+	}`
+
+	sessionToken := "an-invalid-token"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte(jsonResponse))
+	}))
+
+	adminConfig := admin.NewConfig(server.URL, sessionToken)
+	organizationRepo := organizations.NewRepo(adminConfig)
+	err := organizationRepo.RemoveAdminUser("123456789", "john.doe@example.com")
+	if err != nil {
+		t.Log("With invalid token should return error")
+	} else {
+		t.Error("With invalid token did not return error")
+	}
+
+	expectedError := &letmeinerr.LetmeinError{
+		StatusCode: http.StatusForbidden,
+		Body:       []byte(jsonResponse),
+		MainError:  letmeinerr.ErrForbidden,
+	}
+
+	if errors.As(err, &expectedError) {
+		t.Log("With invalid token returns Forbidden")
+	} else {
+		t.Errorf("With invalid token does not return Forbidden, got %s", err)
+	}
+}
+
+func TestRemoveAdminUserWithInvalidInputFails(t *testing.T) {
+	jsonResponse := `{
+		"errors": {
+			"detail": "Not Found"
+		}
+	}`
+
+	sessionToken := "a-valid-token"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(jsonResponse))
+	}))
+
+	adminConfig := admin.NewConfig(server.URL, sessionToken)
+	organizationRepo := organizations.NewRepo(adminConfig)
+	err := organizationRepo.RemoveAdminUser("invalid-id", "john.doe@example.com")
+	if err != nil {
+		t.Log("With invalid organization ID should return error")
+	} else {
+		t.Error("With invalid organization ID not return error")
+	}
+
+	expectedError := &letmeinerr.LetmeinError{
+		StatusCode: http.StatusNotFound,
+		Body:       []byte(jsonResponse),
+		MainError:  letmeinerr.ErrNotFound,
+	}
+
+	if errors.As(err, &expectedError) {
+		t.Log("With invalid organization ID returns Not Found")
+	} else {
+		t.Errorf("With invalid organization ID returns Not Found, got %s", err)
+	}
+}

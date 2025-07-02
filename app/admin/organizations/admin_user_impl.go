@@ -36,6 +36,19 @@ func (letmein *OrganizationRepo) AddAdminUser(orgID, email string) (*AdminUserDa
 	return parseAddAdminUserResponse(statusCode, body)
 }
 
+func (letmein *OrganizationRepo) RemoveAdminUser(orgID, adminUserID string) error {
+	url := letmein.Repo.BaseURL + "/rest/admin/organizations/" + orgID + "/admin_users/" + adminUserID
+	req := restapi.New(url, http.MethodPost)
+	req.AddHeader("Authorization", fmt.Sprintf("Bearer %s", letmein.Repo.SessionToken))
+	statusCode, body, err := req.DoRequest()
+
+	if err != nil {
+		return fmt.Errorf("error requesting delete organization's admin users: %s", err)
+	}
+
+	return parseRemoveResponse(statusCode, body)
+}
+
 func parseListAdminUsersResponse(statusCode int, body []byte) (*AdminUsers, error) {
 	var adminUsers *AdminUsers
 	var err error
@@ -78,4 +91,14 @@ func parseAdminUserResponse(body []byte) (*AdminUserData, error) {
 	}
 
 	return adminUserData, nil
+}
+
+func parseRemoveResponse(statusCode int, body []byte) error {
+	var err error
+
+	if statusCode != http.StatusNoContent {
+		err = letmeinerr.New(statusCode, body)
+	}
+
+	return err
 }
